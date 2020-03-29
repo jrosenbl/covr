@@ -1,16 +1,17 @@
 #!/usr/local/bin/Rscript
 
-#' read csse_covid_19 data, select US states, print latest counts and total
+#' read latest csse_covid_19 daily report csv and print counts for
+#' confirmed, deaths and recovered. 
+#' 
 #' based on data here:
 #' https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data
 #' see also interactive map https://coronavirus.jhu.edu/map.html .
-#'
-#' The latest value in the time series is the current value.
 #' 
 rm(list=ls())
 suppressMessages(library(data.table))
 suppressMessages(library(tidyr))
 
+#' customize these constants.
 kDataRoot <- "~/data/covid-19/COVID-19"
 kDataDir <- "csse_covid_19_data/csse_covid_19_daily_reports"
 kTop <- 25

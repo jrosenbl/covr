@@ -75,17 +75,27 @@ for (r in rdi[dateRange]) {
 
 ct <- xtabs(count ~ report_date+type, data=combDtl[province_state==targetState])
 ct <- data.table(date=as.Date(row.names(ct)), c = ct[,1], d=ct[,2], r=ct[,3])
-ctdts <- xts(ct$d, order.by=ct$date)
+## dr = round(ct$d * 100 / ct$c,3)
+## ct[,dr_pct := dr]
+
 ctcts <- xts(ct$c, order.by=ct$date)
-dr = round(ct$d * 100 / ct$c,3)
-ct[,dr_pct := dr]
-ct[order(-c)]
+ctctsLag <- lag(ctcts)
+ctctsDelta <- ctcts - ctctsLag
+ctctsDeltaPct <- round(ctctsDelta * 100 / ctctsLag, 3)
+ct[,cDeltaPct:=ctctsDeltaPct]
+
+ctdts <- xts(ct$d, order.by=ct$date)
+ctdtsLag <- lag(ctdts)
+ctdtsDelta <- ctdts - ctdtsLag
+ctdtsDeltaPct <- round(ctdtsDelta * 100 / ctdtsLag, 3)
+ct[,dDeltaPct:=ctdtsDeltaPct]
+   
+ct
 
 cs <- colSums(ct[,2:4])
 fdate <- ct[1, date]
 ldate <- ct[nrow(ct), date]
-ldate - fdate
-cat(targetState,"totals for", fdate, "to", ldate, "(", ldate-fdate, "days)\n")
+cat(targetState,"totals for", format(fdate), "to", format(ldate), "(", ldate-fdate, "days)\n")
 for (t in names(cs)) {
     cat(sprintf("%s   %9s\n",t,format(cs[t],big.mark=",")))
 }
