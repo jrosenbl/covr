@@ -29,7 +29,7 @@ convDate <- function(dateVec) {
 #' customize these constants.
 kDataRoot <- "~/data/covid-19/COVID-19"
 kDataDir <- "csse_covid_19_data/csse_covid_19_daily_reports"
-kDefaultTargetState = 'California'
+kDefaultTargetState = 'New York'
 
 targetState <- kDefaultTargetState
 args = commandArgs(trailingOnly=T)
@@ -78,18 +78,23 @@ ct <- data.table(date=as.Date(row.names(ct)), c = ct[,1], d=ct[,2], r=ct[,3])
 ## dr = round(ct$d * 100 / ct$c,3)
 ## ct[,dr_pct := dr]
 
+#' confirmed cases percent change
 ctcts <- xts(ct$c, order.by=ct$date)
 ctctsLag <- lag(ctcts)
 ctctsDelta <- ctcts - ctctsLag
 ctctsDeltaPct <- round(ctctsDelta * 100 / ctctsLag, 3)
 ct[,cDeltaPct:=ctctsDeltaPct]
 
+#' deaths percent change
 ctdts <- xts(ct$d, order.by=ct$date)
 ctdtsLag <- lag(ctdts)
 ctdtsDelta <- ctdts - ctdtsLag
 ctdtsDeltaPct <- round(ctdtsDelta * 100 / ctdtsLag, 3)
 ct[,dDeltaPct:=ctdtsDeltaPct]
-   
+
+#' deaths 5-day rolling mean
+ctdtsRollMean = rollmean(ctdtsDeltaPct, 5, align="right", fill=NA)
+ct[,dDeltaPctRollMean5d := ctdtsRollMean]
 ct
 
 cs <- colSums(ct[,2:4])
