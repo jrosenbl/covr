@@ -26,7 +26,7 @@ latestReport <- reports[length(reports)]
 targetReport <- latestReport
 
 args <- commandArgs(trailingOnly=T)
-if (length(args) > 0 && grepl('[0-9]{8}', args[1])) {
+if (length(args) > 0 && grepl('[0-9]+', args[1])) {
     d = as.Date(args[1], "%Y%m%d")
     if (is.na(d)) {
         stop("specify date as YYYYMMDD")
@@ -39,6 +39,7 @@ if (length(args) > 0 && grepl('[0-9]{8}', args[1])) {
 }
 
 inPath <- file.path(kDataRoot, kDataDir, targetReport)
+cat("inpath=",inPath,"\n")
 if (!file.exists(inPath)) {
     stop(inPath,' not found')
 }
