@@ -30,6 +30,7 @@ convDate <- function(dateVec) {
 kDataRoot <- "~/data/covid-19/COVID-19"
 kDataDir <- "csse_covid_19_data/csse_covid_19_daily_reports"
 kDefaultTargetState = 'New York'
+kOutputDir <- "~/data/cova"
 
 targetState <- kDefaultTargetState
 args = commandArgs(trailingOnly=T)
@@ -97,12 +98,9 @@ ctdtsRollMean = rollmean(ctdtsDeltaPct, 5, align="right", fill=NA)
 ct[,dDeltaPctRollMean5d := ctdtsRollMean]
 ct
 
-cs <- colSums(ct[,2:4])
-fdate <- ct[1, date]
-ldate <- ct[nrow(ct), date]
-cat(targetState,"totals for", format(fdate), "to", format(ldate), "(", ldate-fdate, "days)\n")
-for (t in names(cs)) {
-    cat(sprintf("%s   %9s\n",t,format(cs[t],big.mark=",")))
-}
-cat(sprintf("d/c %9s%%\n", round(cs["d"] * 100 / cs["c"], 3)))
-cat(sprintf("r/c %9s%%\n", round(cs["r"] * 100 / cs["c"], 3)))
+#' save xtab
+s = gsub(" ", "_", targetState)
+ct[,state:=s]
+s = file.path(kOutputDir, paste0(s,".csv"))
+write.csv(ct, file=s, quote=FALSE, row.names=FALSE)
+cat(nrow(ct),"lines saved in",s,"\n")
