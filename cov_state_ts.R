@@ -1,17 +1,20 @@
 #!/usr/local/bin/Rscript
-#' Report statistics over time for a specified state. Shows the daily
-#' percent change in the death count along with a 5-day rolling
-#' average. It reads all of the daily report csv files in
-#' ./COVID-19/csse_covid_19_data/csse_covid_19_daily_reports. Each
-#' daily report has columns for confirmed cases, deaths and
-#' recovered. The data from all of report files is combined into one
-#' large table from which we select the target state. I could have
-#' selected the target state while looping through the files but did it
-#' this way to faciliate exploration.
+#'
+#' COVID-19 confirmed, deaths, recovered counts plus percent change in deaths
+#' over time for a specified state and also for the US in total.
+#'
+#' This program shows the confirmed, deaths and recovered counts along
+#' with daily deaths delta, percent change and rolling mean (5-day) of
+#' percent change for the specified state and the US. It saves the
+#' state statistics in a file named <state>.csv.  
+#'
+#' See constants section for customizable file paths, parameters and
+#' defaults.
 #' 
-#' usage: cov_ts.R [state]
-#' #'   quote the state if it contains a space like "New York".
-#'   capitalize appropriately.#' 
+#' usage: cov_state_ts.R [state]
+#'   quote the state if it contains a space like "New York".
+#'   capitalize appropriately.#'
+#' 
 #' source data:
 #' https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data
 #' see also interactive map https://coronavirus.jhu.edu/map.html .

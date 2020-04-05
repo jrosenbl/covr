@@ -1,12 +1,15 @@
 #!/usr/local/bin/Rscript
-
-#' read latest csse_covid_19 daily report csv and print counts for
-#' confirmed, deaths and recovered. 
-#' 
-#' based on data here:
-#' https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data
-#' see also interactive map https://coronavirus.jhu.edu/map.html .
-#' 
+# COVID-19 confirmed, death and recovered counts for all states
+#
+# This program reports confirmed, death and recovered counts for all
+# states for a specified date (current date is the default)
+#
+# usage: cova_all_states_curr_count.R [YYYYMMDD]
+# 
+# data source:
+# https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data
+# see also interactive map https://coronavirus.jhu.edu/map.html .
+# 
 rm(list=ls())
 suppressMessages(library(data.table))
 suppressMessages(library(tidyr))
