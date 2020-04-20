@@ -23,11 +23,12 @@ kInputDir <- "~/data"
 kDataDir <- "~/data/cova"
 kOutputDir <- kInputDir
 kOutputFile <- 'all_states.csv'
+kOutputXtFile <- "cov_all_states_ts_chg.csv"
 
 inPath <- file.path(kInputDir, kInputFile)
 
 statedf <- read.table(inPath, header=F)
-names(statedf) = c('name')
+names(statedf) = c("name")
 statedf$name = gsub(' ','_',statedf$name)
 combdt = data.table()
 for (s in statedf$name) {
@@ -46,3 +47,5 @@ endPeriod = last(combdt$report_date)
 startPeriod = endPeriod - 5
 xt <- xtabs(dDeltaPctRollMean5d ~ state+report_date, data=combdt[report_date > startPeriod])
 xt
+write.csv(xt, file=kOutputXtFile)
+cat("saved in", kOutputXtFile, "\n")

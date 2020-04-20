@@ -22,6 +22,7 @@
 rm(list=ls())
 suppressMessages(library(data.table))
 suppressMessages(library(tidyr))
+suppressMessages(library(ggplot2))
 suppressMessages(library(xts))
 
 fixNames <- function(nmList) {
@@ -47,9 +48,12 @@ myLag <- function(v) {
 #' customize these constants.
 kDataRoot <- "~/data/covid-19/COVID-19"
 kDataDir <- "csse_covid_19_data/csse_covid_19_daily_reports"
-kDefaultTargetState = 'California'
+kDefaultTargetState = 'New York'
 kOutputDir <- "~/data/cova"
-kStartDate = "2020-03-15"
+kUSTotalOutput <- "us_totals.csv"
+kStartDate <- "2020-03-15"
+kRollMeanDays <- 5
+kGraphDev <- "png"
 
 targetState <- kDefaultTargetState
 args = commandArgs(trailingOnly=T)
@@ -61,7 +65,7 @@ if (length(args) == 1) {
 
 inDir <- file.path(kDataRoot, kDataDir)
 setwd(inDir)
-reports <- list.files(pattern="*.csv")
+reports <- list.files(pattern="^[0-9]{2}-[0-9]{2}-[0-9]{4}.*.csv")
 if (length(reports) == 0) {
     stop("no reports found")
 }
@@ -102,7 +106,7 @@ dDeltaPct <- round(dDelta * 100 / myLag(st$d), 3)
 st[,dDeltaPct:=dDeltaPct]
 
 #' state deaths 5-day rolling mean of percent change
-dRollMean <- rollmean(dDeltaPct, 5, align="right", fill=NA)
+dRollMean <- rollmean(dDeltaPct, kRollMeanDays, align="right", fill=NA)
 st[,dDeltaPctRollMean5d := dRollMean]
 cat("\n",targetState,"\n")
 st
@@ -127,4 +131,20 @@ s = gsub(" ", "_", targetState)
 st[,state:=s]
 s = file.path(kOutputDir, paste0(s,".csv"))
 write.csv(st, file=s, quote=FALSE, row.names=FALSE)
-cat(nrow(st),"lines saved in",s,"\n")
+cat(nrow(st), "lines saved in",s,"\n")
+s = file.path(kOutputDir, kUSTotalOutput)
+write.csv(usTot, file=s, quote=FALSE, row.names=FALSE)
+cat(nrow(s), "lines saved in ustotal.csv\n")
+
+#' plot state deaths and daily delta
+p = ggplot(st, aes(report_date, d)) +
+    geom_bar(stat='identity') +
+    geom_line(aes(report_date, dDelta), color='cyan') +
+    ylab('deaths') +
+    ggtitle(paste(targetState, format(st[nrow(st), report_date], "%Y-%m-%d")))
+s = paste0(targetState, ".", kGraphDev)
+s <- file.path(kOutputDir, s)
+ggsave(plot=p, file=s, device=kGraphDev)
+cat("plot saved in", s, "\n")
+
+
