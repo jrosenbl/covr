@@ -44,6 +44,19 @@ myLag <- function(v) {
     return(c(NA,v[1:length(v)-1]))
 }
 
+plotData <- function(dt, targetState) {
+    p = ggplot(dt, aes(report_date, d)) +
+        geom_bar(stat='identity') +
+        geom_line(aes(report_date, dDelta), color='cyan') +
+        ylab('deaths') +
+        ggtitle(paste(targetState, format(st[nrow(st), report_date], "%Y-%m-%d")))
+    targetState = gsub(" ","_", tolower(targetState))
+    s = paste0(targetState, ".", kGraphDev)
+    s <- file.path(kOutputDir, s)
+    ggsave(plot=p, file=s, device=kGraphDev)
+    cat("plot saved in", s, "\n")
+}
+
 #'----------------------------------------
 #' customize these constants.
 kDataRoot <- "~/data/covid-19/COVID-19"
@@ -136,15 +149,8 @@ s = file.path(kOutputDir, kUSTotalOutput)
 write.csv(usTot, file=s, quote=FALSE, row.names=FALSE)
 cat(nrow(s), "lines saved in ustotal.csv\n")
 
+#' plot state deaths and 
 #' plot state deaths and daily delta
-p = ggplot(st, aes(report_date, d)) +
-    geom_bar(stat='identity') +
-    geom_line(aes(report_date, dDelta), color='cyan') +
-    ylab('deaths') +
-    ggtitle(paste(targetState, format(st[nrow(st), report_date], "%Y-%m-%d")))
-s = paste0(targetState, ".", kGraphDev)
-s <- file.path(kOutputDir, s)
-ggsave(plot=p, file=s, device=kGraphDev)
-cat("plot saved in", s, "\n")
-
+plotData(st, targetState)
+plotData(usTot, "US")
 
