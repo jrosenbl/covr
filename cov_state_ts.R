@@ -19,24 +19,37 @@
 #' https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data
 #' see also interactive map https://coronavirus.jhu.edu/map.html .
 #' 
+#' regarding last_update: So far, only one report file used m/d/y. The rest were Y-m-d.
 rm(list=ls())
 suppressMessages(library(data.table))
 suppressMessages(library(tidyr))
 suppressMessages(library(ggplot2))
+suppressMessages(library(plotly))
+suppressMessages(library(htmlwidgets))
 suppressMessages(library(xts))
+#' ---------------
+#' customize these constants.
+kDataRoot <- "~/data/covid-19/COVID-19"
+kDataDir <- "csse_covid_19_data/csse_covid_19_daily_reports"
+kDefaultTargetState = 'New York'
+kOutputDir <- "~/data/covid19"
+kUSTotalOutput <- "us_totals.csv"
+kStartDate <- "2020-03-15"
+kRollMeanDays <- 5
+kGraphDev <- "png"
+kStatePop <- "~/data/nst-est2019-alldata.csv"
 
+#' ---------------
+#' 
 fixNames <- function(nmList) {
     nmList <- tolower(nmList)
     nmList <- gsub("[/ ]", "_", nmList)
     return(nmList)
 }
 
+
 convDate <- function(dateVec) {
-    #' So far, only one report file used m/d/y. The rest were Y-m-d.
-    if (grepl('/', dateVec[1])) {
-        return(as.Date(dateVec, "%m/%d/%y"))
-    }
-    return(as.Date(dateVec, "%Y-%m-%d"))
+    return(as.Date(gsub('.csv','',dateVec), "%m-%d-%Y"))
 }
 
 #' xts lag not working. not sure why. wrote my own.
@@ -44,30 +57,31 @@ myLag <- function(v) {
     return(c(NA,v[1:length(v)-1]))
 }
 
+getStatePop <- function(targetState){
+    stPop <- fread(kStatePop)
+    names(stPop) <- tolower(names(stPop))
+    stPop <- stPop[,.(name, popestimate2019)]
+    setkey(stPop, name)
+    pop <- stPop[targetState]$popestimate2019
+    return(pop)
+}
+                       
+                           
 plotData <- function(dt, targetState) {
     p = ggplot(dt, aes(report_date, d)) +
         geom_bar(stat='identity') +
-        geom_line(aes(report_date, dDelta), color='cyan') +
+        geom_line(aes(report_date, dDelta), color='orange') +
         ylab('deaths') +
         ggtitle(paste(targetState, format(st[nrow(st), report_date], "%Y-%m-%d")))
     targetState = gsub(" ","_", tolower(targetState))
     s = paste0(targetState, ".", kGraphDev)
     s <- file.path(kOutputDir, s)
-    ggsave(plot=p, file=s, device=kGraphDev)
+    suppressWarnings(ggsave(plot=p, file=s, device=kGraphDev))
     cat("plot saved in", s, "\n")
+    return(p)
 }
 
-#'----------------------------------------
-#' customize these constants.
-kDataRoot <- "~/data/covid-19/COVID-19"
-kDataDir <- "csse_covid_19_data/csse_covid_19_daily_reports"
-kDefaultTargetState = 'New York'
-kOutputDir <- "~/data/cova"
-kUSTotalOutput <- "us_totals.csv"
-kStartDate <- "2020-03-15"
-kRollMeanDays <- 5
-kGraphDev <- "png"
-
+#'-- MAIN -----------------------
 targetState <- kDefaultTargetState
 args = commandArgs(trailingOnly=T)
 if (length(args) == 1) {
@@ -104,10 +118,12 @@ for (r in rdi[dateRange]) {
                                      deaths,
                                      recovered,
                                      last_update)]
-    us[,report_date := convDate(last_update)]
+    us[,report_date := convDate(r)]
     us[,report := r]
     combDt <- rbind(combDt, us)
 }
+#' get target state population
+stPop <- getStatePop(targetState)
 
 #' state totals over time
 st <- combDt[province_state == targetState, .(r=sum(recovered), c=sum(confirmed),d=sum(deaths)), by=report_date]
@@ -142,15 +158,24 @@ usTot
 #' save xtab
 s = gsub(" ", "_", targetState)
 st[,state:=s]
-s = file.path(kOutputDir, paste0(s,".csv"))
+
+s = file.path(kOutputDir, paste0(tolower(s),".csv"))
 write.csv(st, file=s, quote=FALSE, row.names=FALSE)
 cat(nrow(st), "lines saved in",s,"\n")
 s = file.path(kOutputDir, kUSTotalOutput)
 write.csv(usTot, file=s, quote=FALSE, row.names=FALSE)
-cat(nrow(s), "lines saved in ustotal.csv\n")
+cat(nrow(usTot), "lines saved in", s, "\n")
 
 #' plot state deaths and 
 #' plot state deaths and daily delta
-plotData(st, targetState)
-plotData(usTot, "US")
+pState <- plotData(st, targetState)
+s <- file.path(kOutputDir,paste0(gsub(" ","", tolower(targetState)),".html"))
+suppressWarnings(saveWidget(ggplotly(pState), s, selfcontained=T))
+cat("interactive plot saved in", s, "\n")
 
+pUS <- plotData(usTot, "US")
+s <- file.path(kOutputDir,paste0(gsub(" ","", "us"),".html"))
+suppressWarnings(saveWidget(ggplotly(pUS), s, selfcontained=T))
+cat("interactive plot saved in", s, "\n")
+cat(targetState,'state population US Census 2019 Estimate', format(stPop,big.mark=','), "\n")
+cat('deaths per 100K', st[nrow(st)]$d/(stPop/1e5),'\n')
